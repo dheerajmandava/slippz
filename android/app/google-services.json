@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1007019774379",
+    "project_id": "slips-warranty-tracker",
+    "storage_bucket": "slips-warranty-tracker.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1007019774379:android:8f2399d800da5d08e082ee",
+        "android_client_info": {
+          "package_name": "com.slips.warrantytracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfjDZ6ES3WEp8gt9PvzIOkIwrKTT_iXLU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
