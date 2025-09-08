@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/receipt.dart';
 import '../services/local_data_service.dart';
 import '../services/analytics_service.dart';
+import '../widgets/currency_text.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -62,7 +63,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               child: CircularProgressIndicator(color: Color(0xFF6366F1)),
             )
           : _receipts.isEmpty
-              ? _buildEmptyState()
+              ? Center(child: _buildEmptyState(),)
               : RefreshIndicator(
                   onRefresh: _loadReceipts,
                   child: SingleChildScrollView(
@@ -122,16 +123,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           Row(
             children: [
               Expanded(
-                child: _buildInsightItem(
+                child: _buildCurrencyInsightItem(
                   'Total Spent',
-                  '\$${insights['totalSpent'].toStringAsFixed(2)}',
+                  insights['totalSpent'] as double,
                   Icons.attach_money,
                 ),
               ),
               Expanded(
-                child: _buildInsightItem(
+                child: _buildCurrencyInsightItem(
                   'Avg. Receipt',
-                  '\$${insights['averageReceipt'].toStringAsFixed(2)}',
+                  insights['averageReceipt'] as double,
                   Icons.receipt,
                 ),
               ),
@@ -168,6 +169,31 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         const SizedBox(height: 8),
         Text(
           value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCurrencyInsightItem(String label, double amount, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: Colors.white70, size: 24),
+        const SizedBox(height: 8),
+        CurrencyText(
+          amount: amount,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 18,

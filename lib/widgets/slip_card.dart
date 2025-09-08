@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/receipt.dart';
+import 'currency_text.dart';
 
 class SlipCard extends StatelessWidget {
   final Receipt receipt;
@@ -71,8 +72,8 @@ class SlipCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 // Price
-                Text(
-                  '\$${receipt.price.toStringAsFixed(2)}',
+                CurrencyText(
+                  amount: receipt.price,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

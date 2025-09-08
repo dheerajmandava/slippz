@@ -107,7 +107,7 @@ class _ReceiptListState extends State<ReceiptList> {
                     ),
                   )
                 : _filteredReceipts.isEmpty
-                    ? _buildEmptyState()
+                    ? Center(child: _buildEmptyState(),)
                     : _buildReceiptsList(),
           ),
         ],
@@ -411,7 +411,7 @@ class _ReceiptListState extends State<ReceiptList> {
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () => Navigator.pushNamed(context, '/receipt_storage'),
-            child: const Text('Add warranty'),
+            child: const Text('Add slip'),
           ),
         ],
       ),

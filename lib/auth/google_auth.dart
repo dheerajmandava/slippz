@@ -19,7 +19,7 @@ Future<UserCredential?> signInWithGoogle() async {
 
  } catch (e) {
 
-  print(e.toString());
+  // Handle authentication error
   return null;
 
  }

@@ -27,12 +27,12 @@ class HandDrawnButton extends StatelessWidget {
     
     return GestureDetector(
       onTap: () {
-        print('Button tapped!'); // Debug print
+        // Button tapped
         onPressed?.call();
       },
       child: Container(
         width: isFloating ? 12.w : null,
-        height: isFloating ? 12.w : 5.h,
+        height: isFloating ? 12.w : 5.2.h,
         padding: isFloating 
             ? EdgeInsets.all(1.w)
             : EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
@@ -69,10 +69,11 @@ class HandDrawnButton extends StatelessWidget {
                   ],
                   Text(
                     text,
-                    style: GoogleFonts.inter(
-                      fontSize: 11.sp,
+                    style: GoogleFonts.pacifico(
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
                       color: txtColor,
+                      // letterSpacing: 1.w
                     ),
                   ),
                 ],

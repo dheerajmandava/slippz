@@ -1,6 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'auth/login_page.dart';
 import 'receipt_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/analytics_screen.dart';
@@ -11,6 +9,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:sizer/sizer.dart';
 import 'services/local_data_service.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:world_countries/world_countries.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,9 +23,8 @@ Future<void> main() async {
   // Initialize local data service
   try {
     await LocalDataService.instance.initialize();
-    print('Local data service initialized successfully');
   } catch (e) {
-    print('Failed to initialize local data service: $e');
+    // Handle initialization error silently
   }
   
   runApp(const MyApp());
@@ -190,7 +189,15 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        home: FirebaseAuth.instance.currentUser != null? WarrantyTrackerScreen() : LoginPage(), // Set the login page as the home
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          TypedLocaleDelegate(),
+        ],
+        supportedLocales: const [
+          Locale('en'),
+        ],
+        home: WarrantyTrackerScreen() ,
         routes: {
           '/receipt_storage': (context) => const ReceiptStorage(),
           '/receipt_list': (context) => const WarrantyListScreen(),

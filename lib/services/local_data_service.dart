@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:permission_handler/permission_handler.dart';
 import 'database_service.dart';
 import '../models/receipt.dart';
 
@@ -18,6 +19,9 @@ class LocalDataService {
   /// Initialize local data service
   Future<void> initialize() async {
     try {
+      // Request storage permissions
+      await _requestStoragePermissions();
+      
       // Ensure database is healthy
       final isHealthy = await _databaseService.isDatabaseHealthy();
       if (!isHealthy) {
@@ -27,16 +31,41 @@ class LocalDataService {
       // Create necessary directories
       await _createDirectories();
       
-      print('LocalDataService initialized successfully');
+      // LocalDataService initialized successfully
     } catch (e) {
       throw Exception('Failed to initialize LocalDataService: $e');
     }
   }
 
-  /// Create necessary directories for local storage
+  /// Request storage permissions for external storage access
+  Future<void> _requestStoragePermissions() async {
+    try {
+      // For Android 13+ (API 33+), we need different permissions
+      if (Platform.isAndroid) {
+        final status = await Permission.manageExternalStorage.status;
+        if (!status.isGranted) {
+          final result = await Permission.manageExternalStorage.request();
+          if (!result.isGranted) {
+            // Fallback to regular storage permission
+            final storageStatus = await Permission.storage.status;
+            if (!storageStatus.isGranted) {
+              final storageResult = await Permission.storage.request();
+              if (!storageResult.isGranted) {
+                throw Exception('Storage permission denied');
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      throw Exception('Failed to request storage permissions: $e');
+    }
+  }
+
+  /// Create necessary directories for external storage
   Future<void> _createDirectories() async {
     try {
-      final appDir = await getApplicationDocumentsDirectory();
+      final appDir = await _getExternalStorageDirectory();
       final receiptsDir = Directory(path.join(appDir.path, 'receipts'));
       final exportsDir = Directory(path.join(appDir.path, 'exports'));
       final backupsDir = Directory(path.join(appDir.path, 'backups'));
@@ -52,6 +81,25 @@ class LocalDataService {
       }
     } catch (e) {
       throw Exception('Failed to create directories: $e');
+    }
+  }
+
+  /// Get external storage directory with fallback to internal if external is not available
+  Future<Directory> _getExternalStorageDirectory() async {
+    try {
+      // Try to get external storage directory first
+      final externalDir = await getExternalStorageDirectory();
+      if (externalDir != null) {
+        return Directory(path.join(externalDir.path, 'SlippzWarrantyTracker'));
+      }
+      
+      // Fallback to application documents directory if external storage is not available
+      final appDir = await getApplicationDocumentsDirectory();
+      return appDir;
+    } catch (e) {
+      // Final fallback to application documents directory
+      final appDir = await getApplicationDocumentsDirectory();
+      return appDir;
     }
   }
 
@@ -142,7 +190,7 @@ class LocalDataService {
   // Image Management
   Future<String> _saveReceiptImage(Receipt receipt) async {
     try {
-      final appDir = await getApplicationDocumentsDirectory();
+      final appDir = await _getExternalStorageDirectory();
       final receiptsDir = Directory(path.join(appDir.path, 'receipts'));
       
       // Create unique filename
@@ -172,7 +220,7 @@ class LocalDataService {
       }
     } catch (e) {
       // Don't throw error for image deletion failure
-      print('Failed to delete receipt image: $e');
+      // Silently handle image deletion errors
     }
   }
 
@@ -235,7 +283,7 @@ class LocalDataService {
       final jsonString = jsonEncode(exportData);
       
       // Save to exports directory
-      final appDir = await getApplicationDocumentsDirectory();
+      final appDir = await _getExternalStorageDirectory();
       final exportsDir = Directory(path.join(appDir.path, 'exports'));
       final filename = 'slippz_export_${DateTime.now().millisecondsSinceEpoch}.json';
       final file = File(path.join(exportsDir.path, filename));
@@ -290,7 +338,7 @@ class LocalDataService {
   // Backup and Restore
   Future<String> createBackup() async {
     try {
-      final appDir = await getApplicationDocumentsDirectory();
+      final appDir = await _getExternalStorageDirectory();
       final backupsDir = Directory(path.join(appDir.path, 'backups'));
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final backupPath = path.join(backupsDir.path, 'backup_$timestamp.json');
@@ -310,7 +358,7 @@ class LocalDataService {
 
   Future<List<String>> getAvailableBackups() async {
     try {
-      final appDir = await getApplicationDocumentsDirectory();
+      final appDir = await _getExternalStorageDirectory();
       final backupsDir = Directory(path.join(appDir.path, 'backups'));
       
       if (!await backupsDir.exists()) {
@@ -334,7 +382,7 @@ class LocalDataService {
       await _databaseService.clearAllData();
       
       // Clear local images
-      final appDir = await getApplicationDocumentsDirectory();
+      final appDir = await _getExternalStorageDirectory();
       final receiptsDir = Directory(path.join(appDir.path, 'receipts'));
       
       if (await receiptsDir.exists()) {
@@ -348,7 +396,7 @@ class LocalDataService {
 
   Future<Map<String, dynamic>> getStorageInfo() async {
     try {
-      final appDir = await getApplicationDocumentsDirectory();
+      final appDir = await _getExternalStorageDirectory();
       final receiptsDir = Directory(path.join(appDir.path, 'receipts'));
       final exportsDir = Directory(path.join(appDir.path, 'exports'));
       final backupsDir = Directory(path.join(appDir.path, 'backups'));
@@ -417,7 +465,7 @@ class LocalDataService {
     try {
       await _databaseService.closeDatabase();
     } catch (e) {
-      print('Error during cleanup: $e');
+      // Silently handle cleanup errors
     }
   }
 }

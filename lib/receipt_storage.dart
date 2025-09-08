@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sizer/sizer.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'models/receipt.dart';
 import 'services/local_data_service.dart';
 
@@ -51,9 +52,7 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
     _warrantyEndDateController = TextEditingController(text: '');
     _priceController = TextEditingController(text: '');
     
-    // Debug logging
-    debugPrint('Controllers initialized successfully');
-    debugPrint('Product name controller text: "${_productNameController.text}"');
+    // Controllers initialized
     
     // Autostart appropriate picker based on the entry point
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutostart());
@@ -81,7 +80,7 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
     
     for (final controller in controllers) {
       if (controller.text.contains(RegExp(r'[┤├]'))) {
-        debugPrint('Detected corrupted controller, resetting...');
+        // Reset corrupted controller
         controller.text = '';
         controller.selection = TextSelection.collapsed(offset: 0);
       }
@@ -275,69 +274,119 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
 
     // Wrap the entire widget in Material to provide Material context
     return Material(
-      color: Colors.white,
+      color: const Color(0xFFF9FAFB),
       child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.9,
         child: Column(
           children: [
             // Drag handle
             Container(
-              margin: EdgeInsets.only(top: 2.h),
-              width: 10.w,
-              height: 0.5.h,
+              margin: EdgeInsets.only(top: 1.5.h),
+              width: 12.w,
+              height: 0.6.h,
               decoration: BoxDecoration(
                 color: const Color(0xFFD1D5DB),
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(3),
               ),
             ),
-            SizedBox(height: 2.h),
+            SizedBox(height: 3.h),
             
-            // Header
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4.w),
+            // Header with improved styling
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(
+                    color: Color(0xFFE5E7EB),
+                    width: 1,
+                  ),
+                ),
+              ),
               child: Row(
                 children: [
-                  Text(
-                    'Add Warranty',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF111827),
+                  Container(
+                    padding: EdgeInsets.all(2.w),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.receipt_long,
+                      color: const Color(0xFF10B981),
+                      size: 5.w,
                     ),
                   ),
+                  SizedBox(width: 3.w),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Add New Slip',
+                        style: GoogleFonts.inter(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF111827),
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      SizedBox(height: 0.5.h),
+                      Text(
+                        'Keep track of your warranty',
+                        style: GoogleFonts.inter(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
+                  ),
                   const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.close, color: const Color(0xFF6B7280), size: 5.w),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: EdgeInsets.all(2.w),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.close,
+                        color: const Color(0xFF6B7280),
+                        size: 5.w,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 2.h),
             
-            // Form content
+            // Form content with improved spacing
             Expanded(
               child: Form(
                 key: _formKey,
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w),
+                  padding: EdgeInsets.all(5.w),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      SizedBox(height: 1.h),
+                      
                       // Essential Fields
                       _buildEssentialFields(),
-                      SizedBox(height: 2.h),
+                      SizedBox(height: 3.h),
                       
                       // Additional Details
                       _buildAdditionalDetails(),
-                      SizedBox(height: 2.h),
+                      SizedBox(height: 3.h),
                       
                       // Photo Section
                       _buildPhotoSection(),
-                      SizedBox(height: 3.h),
+                      SizedBox(height: 4.h),
                       
                       // Action Buttons
                       _buildActionButtons(),
-                      SizedBox(height: 2.h),
+                      SizedBox(height: 3.h),
                     ],
                   ),
                 ),
@@ -351,13 +400,13 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
 
   Widget _buildPhotoSection() {
     return Container(
-      padding: EdgeInsets.all(5.w),
+      padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -366,40 +415,41 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Section Header
           Row(
             children: [
               Container(
-                padding: EdgeInsets.all(2.w),
+                padding: EdgeInsets.all(1.5.w),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
                   Icons.camera_alt,
-                  color: const Color(0xFF10B981),
-                  size: 5.w,
+                  color: const Color(0xFFF59E0B),
+                  size: 4.w,
                 ),
               ),
-              SizedBox(width: 3.w),
+              SizedBox(width: 2.w),
               Text(
                 'Receipt Photo',
-                style: TextStyle(
-                  fontSize: 16.sp,
+                style: GoogleFonts.inter(
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF111827),
                 ),
               ),
               const Spacer(),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 1.h),
+                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   'Optional',
-                  style: TextStyle(
-                    fontSize: 10.sp,
+                  style: GoogleFonts.inter(
+                    fontSize: 9.sp,
                     color: const Color(0xFF6B7280),
                     fontWeight: FontWeight.w500,
                   ),
@@ -407,7 +457,7 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
               ),
             ],
           ),
-          SizedBox(height: 4.h),
+          SizedBox(height: 3.h),
           if (_selectedImagePath != null) ...[
             Container(
               width: double.infinity,
@@ -431,24 +481,43 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
                   child: OutlinedButton.icon(
                     onPressed: () => _pickImage(ImageSource.camera),
                     icon: Icon(Icons.camera_alt, size: 4.w),
-                    label: Text('Retake', style: TextStyle(fontSize: 12.sp)),
+                    label: Text(
+                      'Retake',
+                      style: GoogleFonts.inter(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF10B981),
-                      side: const BorderSide(color: Color(0xFF10B981)),
+                      side: const BorderSide(color: Color(0xFF10B981), width: 1.5),
                       padding: EdgeInsets.symmetric(vertical: 2.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
-                SizedBox(width: 2.w),
+                SizedBox(width: 3.w),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: ElevatedButton.icon(
                     onPressed: () => _pickImage(ImageSource.gallery),
                     icon: Icon(Icons.photo_library, size: 4.w),
-                    label: Text('Change', style: TextStyle(fontSize: 12.sp)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF10B981),
-                      side: const BorderSide(color: Color(0xFF10B981)),
+                    label: Text(
+                      'Change',
+                      style: GoogleFonts.inter(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 2.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
                     ),
                   ),
                 ),
@@ -493,24 +562,43 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
                   child: ElevatedButton.icon(
                     onPressed: () => _pickImage(ImageSource.camera),
                     icon: Icon(Icons.camera_alt, size: 4.w),
-                    label: Text('Camera', style: TextStyle(fontSize: 12.sp)),
+                    label: Text(
+                      'Camera',
+                      style: GoogleFonts.inter(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
                       foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 2.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
                     ),
                   ),
                 ),
-                SizedBox(width: 2.w),
+                SizedBox(width: 3.w),
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: OutlinedButton.icon(
                     onPressed: () => _pickImage(ImageSource.gallery),
                     icon: Icon(Icons.photo_library, size: 4.w),
-                    label: Text('Gallery', style: TextStyle(fontSize: 12.sp)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
-                      foregroundColor: Colors.white,
+                    label: Text(
+                      'Gallery',
+                      style: GoogleFonts.inter(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF10B981),
+                      side: const BorderSide(color: Color(0xFF10B981), width: 1.5),
                       padding: EdgeInsets.symmetric(vertical: 2.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -524,38 +612,82 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
 
   Widget _buildEssentialFields() {
     return Container(
-      padding: EdgeInsets.all(3.w),
+      padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Section Header
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(1.5.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  Icons.info_outline,
+                  color: const Color(0xFF10B981),
+                  size: 4.w,
+                ),
+              ),
+              SizedBox(width: 2.w),
+              Text(
+                'Essential Information',
+                style: GoogleFonts.inter(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 3.h),
+          
           // Product name
           TextFormField(
             controller: _productNameController,
             decoration: InputDecoration(
-              labelText: 'Product Name *',
+              labelText: 'Product Name',
               hintText: 'e.g., iPhone 15 Pro',
+              labelStyle: GoogleFonts.inter(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF374151),
+              ),
+              hintStyle: GoogleFonts.inter(
+                fontSize: 11.sp,
+                color: const Color(0xFF9CA3AF),
+              ),
               floatingLabelBehavior: FloatingLabelBehavior.auto,
-              floatingLabelAlignment: FloatingLabelAlignment.start,
-              contentPadding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
+              contentPadding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
               filled: true,
               fillColor: const Color(0xFFF9FAFB),
-              focusedBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+                borderRadius: BorderRadius.circular(12),
               ),
-              enabledBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              enabledBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.circular(12),
               ),
-              border: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              border: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-            style: TextStyle(fontSize: 11.sp),
+            style: GoogleFonts.inter(fontSize: 10.sp),
             onChanged: (value) {
               // Sanitize input in real-time
               final sanitized = _sanitizeInput(value);
@@ -573,39 +705,58 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
               return null;
             },
           ),
-          SizedBox(height: 1.5.h),
+          SizedBox(height: 2.h),
           
           // Warranty end date
           TextFormField(
             controller: _warrantyEndDateController,
             decoration: InputDecoration(
-              labelText: 'Warranty End Date *',
+              labelText: 'Warranty End Date',
               hintText: 'Select when warranty expires',
-              suffixIcon: IconButton(
-                icon: Icon(Icons.calendar_month, color: const Color(0xFF10B981), size: 4.w),
-                onPressed: () => _selectDate(context, false),
+              labelStyle: GoogleFonts.inter(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF374151),
+              ),
+              hintStyle: GoogleFonts.inter(
+                fontSize: 11.sp,
+                color: const Color(0xFF9CA3AF),
+              ),
+              suffixIcon: Container(
+                margin: EdgeInsets.all(1.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.calendar_today, color: const Color(0xFF10B981), size: 4.w),
+                  onPressed: () => _selectDate(context, false),
+                ),
               ),
               helperText: _warrantyEndDate != null 
                 ? '${_calculateDaysUntilExpiry()} days remaining'
                 : 'When does your warranty expire?',
-              helperStyle: TextStyle(fontSize: 9.sp),
-              contentPadding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
+              helperStyle: GoogleFonts.inter(
+                fontSize: 8.sp,
+                color: const Color(0xFF6B7280),
+              ),
+              contentPadding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
               filled: true,
               fillColor: const Color(0xFFF9FAFB),
-              focusedBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+                borderRadius: BorderRadius.circular(12),
               ),
-              enabledBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              enabledBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.circular(12),
               ),
-              border: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              border: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-            style: TextStyle(fontSize: 11.sp),
+            style: GoogleFonts.inter(fontSize: 10.sp),
             readOnly: true,
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -621,36 +772,96 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
 
   Widget _buildAdditionalDetails() {
     return Container(
-      padding: EdgeInsets.all(3.w),
+      padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Section Header
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(1.5.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  Icons.tune,
+                  color: const Color(0xFF6366F1),
+                  size: 4.w,
+                ),
+              ),
+              SizedBox(width: 2.w),
+              Text(
+                'Additional Details',
+                style: GoogleFonts.inter(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'Optional',
+                  style: GoogleFonts.inter(
+                    fontSize: 9.sp,
+                    color: const Color(0xFF6B7280),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 3.h),
           // Store name
           TextFormField(
             controller: _storeNameController,
             decoration: InputDecoration(
               labelText: 'Store Name',
               hintText: 'e.g., Apple Store, Best Buy',
-              contentPadding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
+              labelStyle: GoogleFonts.inter(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF374151),
+              ),
+              hintStyle: GoogleFonts.inter(
+                fontSize: 11.sp,
+                color: const Color(0xFF9CA3AF),
+              ),
+              contentPadding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
               filled: true,
               fillColor: const Color(0xFFF9FAFB),
-              focusedBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+                borderRadius: BorderRadius.circular(12),
               ),
-              enabledBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              enabledBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.circular(12),
               ),
-              border: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              border: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-            style: TextStyle(fontSize: 11.sp),
+            style: GoogleFonts.inter(fontSize: 10.sp),
             onChanged: (value) {
               final sanitized = _sanitizeInput(value);
               if (sanitized != value) {
@@ -661,7 +872,7 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
               }
             },
           ),
-          SizedBox(height: 1.5.h),
+          SizedBox(height: 2.h),
           
           // Purchase date
           TextFormField(
@@ -669,30 +880,46 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
             decoration: InputDecoration(
               labelText: 'Purchase Date',
               hintText: 'When did you buy this?',
-              suffixIcon: IconButton(
-                icon: Icon(Icons.calendar_month, color: const Color(0xFF10B981), size: 4.w),
-                onPressed: () => _selectDate(context, true),
+              labelStyle: GoogleFonts.inter(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF374151),
               ),
-              contentPadding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
+              hintStyle: GoogleFonts.inter(
+                fontSize: 11.sp,
+                color: const Color(0xFF9CA3AF),
+              ),
+              suffixIcon: Container(
+                margin: EdgeInsets.all(1.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.calendar_today, color: const Color(0xFF10B981), size: 4.w),
+                  onPressed: () => _selectDate(context, true),
+                ),
+              ),
+              contentPadding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
               filled: true,
               fillColor: const Color(0xFFF9FAFB),
-              focusedBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+                borderRadius: BorderRadius.circular(12),
               ),
-              enabledBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              enabledBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.circular(12),
               ),
-              border: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              border: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-            style: TextStyle(fontSize: 11.sp),
+            style: GoogleFonts.inter(fontSize: 10.sp),
             readOnly: true,
           ),
-          SizedBox(height: 1.5.h),
+          SizedBox(height: 2.h),
           
           // Price
           TextFormField(
@@ -700,23 +927,44 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
             decoration: InputDecoration(
               labelText: 'Price',
               hintText: '0.00',
-              contentPadding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
+              labelStyle: GoogleFonts.inter(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF374151),
+              ),
+              hintStyle: GoogleFonts.inter(
+                fontSize: 11.sp,
+                color: const Color(0xFF9CA3AF),
+              ),
+              prefixIcon: Container(
+                margin: EdgeInsets.all(1.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.attach_money,
+                  color: const Color(0xFF10B981),
+                  size: 4.w,
+                ),
+              ),
+              contentPadding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
               filled: true,
               fillColor: const Color(0xFFF9FAFB),
-              focusedBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+                borderRadius: BorderRadius.circular(12),
               ),
-              enabledBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              enabledBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.circular(12),
               ),
-              border: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+              border: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-            style: TextStyle(fontSize: 11.sp),
+            style: GoogleFonts.inter(fontSize: 10.sp),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onChanged: (value) {
               // Only allow numbers, decimal points, and basic characters
@@ -729,7 +977,7 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
               }
             },
           ),
-          SizedBox(height: 1.5.h),
+          SizedBox(height: 3.h),
           
           // Category
           Column(
@@ -737,10 +985,10 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
             children: [
               Text(
                 'Category',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF111827),
+                style: GoogleFonts.inter(
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF374151),
                 ),
               ),
               SizedBox(height: 2.h),

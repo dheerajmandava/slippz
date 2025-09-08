@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import '../services/local_data_service.dart';
+import '../services/currency_service.dart';
+import 'package:world_countries/world_countries.dart';
 
 class LocalStorageSettingsScreen extends StatefulWidget {
   const LocalStorageSettingsScreen({super.key});
@@ -166,6 +170,10 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
                   _buildStorageInfoCard(),
                   SizedBox(height: 4.h),
                   
+                  // Currency
+                  _buildCurrencySection(),
+                  SizedBox(height: 4.h),
+
                   // Data Management Section
                   _buildDataManagementSection(),
                   SizedBox(height: 4.h),
@@ -175,6 +183,80 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildCurrencySection() {
+    return Container(
+      padding: EdgeInsets.all(4.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(2.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF14B8A6).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.attach_money,
+                  color: const Color(0xFF14B8A6),
+                  size: 5.w,
+                ),
+              ),
+              SizedBox(width: 3.w),
+              Text(
+                'Currency',
+                style: GoogleFonts.inter(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 3.h),
+          OutlinedButton.icon(
+            onPressed: () async {
+              final picker = CurrencyPicker(
+                onSelect: (currency) async {
+                  debugPrint("chosen: $currency");
+                  await CurrencyService.setSelectedCode(currency.code);
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Currency set to ${currency.code} ($Currency)'),
+                      backgroundColor: const Color(0xFF10B981),
+                    ),
+                  );
+                   setState(() {});
+                },
+              );
+
+              picker.showInModalBottomSheet(context);
+            },
+            icon: const Icon(Icons.public),
+            label: Text(
+              'Select Currency',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
+          )
+
+        ],
+      ),
     );
   }
 

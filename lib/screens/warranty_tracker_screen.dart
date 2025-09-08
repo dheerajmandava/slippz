@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
+import 'package:slips_warranty_tracker/services/currency_service.dart';
 import '../widgets/warranty_summary_card.dart';
 import '../widgets/warranty_calendar.dart';
 import '../widgets/hand_drawn_button.dart';
 import '../receipt_storage.dart';
 import '../services/local_data_service.dart';
-import '../services/sample_data_service.dart';
 import '../models/receipt.dart';
 
 class WarrantyTrackerScreen extends StatefulWidget {
@@ -22,6 +22,8 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
   double _coveredValue = 0.0;
   double _expiringValue = 0.0;
   double _totalValue = 0.0;
+  var coveredVal;
+  var expiringVal;
 
   @override
   void initState() {
@@ -33,27 +35,29 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // Try to load real data first from local storage
+      // Load real data from local storage
       final receipts = await LocalDataService.instance.getAllReceipts();
-      
-      if (receipts.isEmpty) {
-        // Use sample data if no real data exists
-        _receipts = SampleDataService.getSampleReceipts();
-      } else {
-        _receipts = receipts;
-      }
-      
+      _receipts = receipts;
       _calculateWarrantyValues();
       setState(() => _isLoading = false);
     } catch (e) {
-      // Fallback to sample data on error
-      _receipts = SampleDataService.getSampleReceipts();
+      // Handle error gracefully
+      _receipts = [];
       _calculateWarrantyValues();
       setState(() => _isLoading = false);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load data: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
     }
   }
 
-  void _calculateWarrantyValues() {
+  void _calculateWarrantyValues() async {
     final now = DateTime.now();
     double covered = 0.0;
     double expiring = 0.0;
@@ -69,11 +73,13 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
         expiring += receipt.price;
       }
     }
-
+  coveredVal = await CurrencyService.formatAmountNoDecimals(covered);
+      expiringVal = await CurrencyService.formatAmountNoDecimals(expiring);
     setState(() {
       _coveredValue = covered;
       _expiringValue = expiring;
       _totalValue = total;
+    
     });
   }
 
@@ -81,7 +87,10 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        shadowColor: Colors.transparent,
+        foregroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           'Slippz',
@@ -94,6 +103,15 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
         ),
         centerTitle: true,
         actions: [
+          // IconButton(
+          //   onPressed: _loadData,
+          //   icon: Icon(
+          //     Icons.refresh,
+          //     color: const Color(0xFF6B7280),
+          //     size: 5.w,
+          //   ),
+          //   tooltip: 'Refresh Data',
+          // ),
           IconButton(
             onPressed: () {
               Navigator.pushNamed(context, '/local_storage');
@@ -109,14 +127,12 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          print('FAB pressed - navigating to receipt storage');
           try {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const ReceiptStorage()),
             );
           } catch (e) {
-            print('Navigation error: $e');
           }
         },
         backgroundColor: const Color.fromARGB(255, 48, 47, 47),
@@ -127,51 +143,51 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
       body: SafeArea(
         child: Column(
           children: [
-       
             Expanded(
               child: _isLoading
                   ? _buildLoadingState()
-                  : SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 4.h),
-                          
-                          // Warranty Summary Card (Hand-drawn Donut Chart)
-                          WarrantySummaryCard(
+                  : RefreshIndicator(
+                      onRefresh: _loadData,
+                      color: const Color(0xFF10B981),
+                      backgroundColor: Colors.white,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: 4.w),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            
+                          Center(child: WarrantySummaryCard(
                             coveredValue: _coveredValue,
                             expiringValue: _expiringValue,
                             totalValue: _totalValue,
-                          ),
-                          
-                          SizedBox(height: 4.h),
-                          
-                          // Top Row: Status + View All
+                            coveredVal:coveredVal,
+                            expiringVal:expiringVal
+                          ),),
+                
+                          SizedBox(height: 10.h),
                           _buildTopRow(),
                           
-                          SizedBox(height: 4.h),
-                          
-                          // Warranty Calendar
+                          SizedBox(height: 2.h),
+                          // Text('Calendar', style: GoogleFonts.poppins(
+                          //   fontSize: 12.sp,
+                          //   fontWeight: FontWeight.w600,
+                          //   color: const Color.fromARGB(255, 49, 58, 63),
+                          //   letterSpacing: -0.3,
+                          // ),),
+                          SizedBox(height: 2.h),
                           WarrantyCalendar(
                             receipts: _receipts,
                             onDateTap: () {
-                              // Navigate to warranty list when date is tapped
                               Navigator.pushNamed(context, '/receipt_list');
                             },
                           ),
-                          // Latest Slips Section
-                          // LatestSlipsSection(
-                          //   receipts: _receipts,
-                          //   onViewAll: () {
-                          //     Navigator.pushNamed(context, '/receipt_list');
-                          //   },
-                          // ),
-                          
+
                           SizedBox(height: 12.h), // Extra space for FAB overlap
                         ],
                       ),
                     ),
+                  ),
             ),
           ],
         ),
@@ -205,7 +221,7 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
       margin: EdgeInsets.symmetric(horizontal: 4.w),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Left: Status summary (compact)
           Expanded(
@@ -215,7 +231,7 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
               children: [
                 // Progress bar
                 Container(
-                  height: 3,
+                  height: 0.8.h,
                   decoration: BoxDecoration(
                     color: const Color(0xFFE5E7EB),
                     borderRadius: BorderRadius.circular(2),
@@ -230,6 +246,7 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
                               color: const Color(0xFFEF4444),
                               borderRadius: BorderRadius.circular(2),
                             ),
+                            child: Container(height: 10.h,),
                           ),
                         ),
                       if (expiringCount > 0)
@@ -258,8 +275,8 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
                 SizedBox(height: 1.h),
                 // Status text
                 Text(
-                  total == 0 ? 'No warranties' : '$total warranties',
-                  style: GoogleFonts.inter(
+                  total == 0 ? 'No Slips' : '$total Slips',
+                  style: GoogleFonts.pacifico(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF6B7280),
@@ -273,15 +290,17 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
           
           // Right: View All button (prominent)
           Expanded(
-            flex: 1,
+            flex: 2,
             child: HandDrawnButton(
-              text: 'View All',
+              
+              text: 'View Slips',
               icon: Icons.arrow_forward_ios,
               backgroundColor: const Color.fromARGB(255, 48, 47, 47),
               textColor: Colors.white,
               onPressed: () => Navigator.pushNamed(context, '/receipt_list'),
             ),
           ),
+          
         ],
       ),
     );

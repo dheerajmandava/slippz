@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:sizer/sizer.dart';
 import '../models/receipt.dart';
 import '../services/database_service.dart';
+import '../widgets/currency_text.dart';
 import '../services/settings_service.dart';
 import '../widgets/minimal_slip_item.dart';
 
@@ -131,7 +132,7 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
               child: _isLoading
                   ? _buildLoadingState()
                   : _filteredReceipts.isEmpty
-                      ? _buildEmptyState()
+                      ? Center(child: _buildEmptyState(),)
                       : _buildWarrantiesList(),
             ),
           ],
@@ -228,10 +229,10 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
             color: const Color(0xFF9CA3AF),
             fontWeight: FontWeight.w400,
           ),
-          prefixIcon: Text(
-            '🔍',
-            style: TextStyle(fontSize: 14.sp),
-          ),
+          // prefixIcon: Text(
+          //   '🔍',
+          //   style: TextStyle(fontSize: 14.sp),
+          // ),
           border: UnderlineInputBorder(
             borderSide: BorderSide(
               color: const Color(0xFFE5E7EB),
@@ -615,7 +616,7 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
                   // Details
                   _buildDetailRow('Purchase Date', _formatDate(receipt.purchaseDate)),
                   _buildDetailRow('Warranty Ends', _formatDate(receipt.warrantyEndDate)),
-                  _buildDetailRow('Price', '\$${receipt.price.toStringAsFixed(2)}'),
+                  _buildDetailRowWidget('Price', CurrencyText(amount: receipt.price, style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: const Color(0xFF111827)))),
                   _buildDetailRow('Category', receipt.category),
                 ],
               ),
@@ -658,6 +659,31 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
     );
   }
 
+  Widget _buildDetailRowWidget(String label, Widget value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF111827),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: value,
+          ),
+        ],
+      ),
+    );
+  }
+
   Color _getStatusColor(int daysUntilExpiry) {
     if (daysUntilExpiry <= 0) return const Color(0xFF6B7280);
     if (daysUntilExpiry <= 7) return const Color(0xFFEF4444);
@@ -692,7 +718,7 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
   }
 
   void _editWarranty(Receipt receipt) {
-    // TODO: Implement edit functionality
+    // Edit functionality will be implemented in future version
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Edit functionality coming soon!'),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'currency_text.dart';
 import 'dart:io';
 import 'package:sizer/sizer.dart';
 import '../models/receipt.dart';
@@ -138,8 +139,8 @@ class _WarrantyCardState extends State<WarrantyCard> {
                     color: const Color(0xFFF0FDF4),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    '\$${widget.receipt.price.toStringAsFixed(2)}',
+                  child: CurrencyText(
+                    amount: widget.receipt.price,
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w600,

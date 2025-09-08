@@ -1,24 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/currency_service.dart';
 import 'dart:math' as math;
 import 'package:sizer/sizer.dart';
 
-class WarrantySummaryCard extends StatelessWidget {
+class WarrantySummaryCard extends StatefulWidget {
   final double coveredValue;
   final double expiringValue;
   final double totalValue;
+  final coveredVal;
+  final expiringVal;
 
   const WarrantySummaryCard({
     super.key,
     required this.coveredValue,
     required this.expiringValue,
-    required this.totalValue,
+    required this.totalValue, 
+    this.coveredVal, 
+    this.expiringVal,
   });
 
   @override
+  State<WarrantySummaryCard> createState() => _WarrantySummaryCardState();
+}
+
+class _WarrantySummaryCardState extends State<WarrantySummaryCard> {
+  bool _showTotalValue = true;
+
+  @override
   Widget build(BuildContext context) {
-    // Handle empty state
-    if (totalValue == 0) {
+    if (widget.totalValue == 0) {
       return Container(
         padding: EdgeInsets.all(2.w),
         child: Column(
@@ -56,48 +67,89 @@ class WarrantySummaryCard extends StatelessWidget {
     }
 
     return Container(
-      padding:  EdgeInsets.all(2.w),
+      padding: EdgeInsets.all(2.w),
       child: Column(
         children: [
-          // Hand-drawn donut chart with legends
-          SizedBox(
-            height: 15.h,
-            child: CustomPaint(
-              size: Size(100.w, 25.h),
-              painter: HandDrawnDonutChartPainter(
-                coveredValue: coveredValue,
-                expiringValue: expiringValue,
-                totalValue: totalValue,
-              ),
-            ),
-          ),
-          SizedBox(height: 10.h),
-          
-          Column(
+          // Total Value Section with Privacy Toggle (Top Right)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '\$${totalValue.toStringAsFixed(0).replaceAllMapped(
-                  RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                  (Match m) => '${m[1]},',
-                )}',
-                style: GoogleFonts.inter(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF111827),
-                  letterSpacing: -0.5,
-                  
-                ),
-              ),
-              SizedBox(height: 0.5.h),
-              Text(
-                'Total Value',
-                style: GoogleFonts.inter(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF6B7280),
+              const Spacer(),
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        FutureBuilder<String>(
+                          future: CurrencyService.formatAmountNoDecimals(widget.totalValue),
+                          builder: (context, snap) {
+                            final formatted = snap.data ?? '\${widget.totalValue.toStringAsFixed(0)}';
+                            return Text(
+                              _showTotalValue 
+                                ? 'Total: ${formatted.replaceAllMapped(
+                                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                                    (Match m) => '${m[1]},',
+                                  )}'
+                                : 'Total: ••••••',
+                              style: GoogleFonts.inter(
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w400,
+                                color: const Color.fromARGB(255, 49, 58, 63),
+                                letterSpacing: 0.3,
+                              ),
+                            );
+                          },
+                        ),
+                        SizedBox(width: 2.w),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _showTotalValue = !_showTotalValue;
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.all(1.w),
+                            decoration: BoxDecoration(
+                              color: _showTotalValue  
+                                ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                                : const Color(0xFF6B7280).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(
+                              _showTotalValue ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              size: 4.w,
+                              color: _showTotalValue 
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
+          ),
+          SizedBox(height: 2.h),
+          
+          // Donut Chart Section
+          SizedBox(
+            height: 20.h,
+            child: CustomPaint(
+              size: Size(100.w, 20.h),
+              painter: HandDrawnDonutChartPainter(
+                coveredValue: widget.coveredValue,
+                expiringValue: widget.expiringValue,
+                totalValue: widget.totalValue,
+                coveredVal: widget.coveredVal,
+                expiringVal: widget.expiringVal
+              ),
+            ),
           ),
         ],
       ),
@@ -109,11 +161,15 @@ class HandDrawnDonutChartPainter extends CustomPainter {
   final double coveredValue;
   final double expiringValue;
   final double totalValue;
+  final coveredVal;
+  final expiringVal;
 
-  HandDrawnDonutChartPainter({
+  HandDrawnDonutChartPainter( {
     required this.coveredValue,
     required this.expiringValue,
     required this.totalValue,
+    required this.coveredVal,
+    required this.expiringVal
   });
 
   @override
@@ -341,19 +397,19 @@ class HandDrawnDonutChartPainter extends CustomPainter {
     
     return path;
   }
-void _drawHandDrawnLegends(
+Future<void> _drawHandDrawnLegends(
   Canvas canvas,
   Size size,
   Offset donutCenter,
   double donutRadius,
   double strokeWidth,
-) {
+) async {
   final total = coveredValue + expiringValue;
   if (total == 0) return;
 
   final coveredAngle = (coveredValue / total) * 2 * math.pi;
   final expiringAngle = (expiringValue / total) * 2 * math.pi;
-  final startAngle = -math.pi / 2; // top
+  final startAngle = -math.pi / 2;
 
   final linePaint = Paint()
     ..color = Colors.black
@@ -412,13 +468,15 @@ void _drawHandDrawnLegends(
     );
   }
 
+
+
   /* -------------------------------------------------
    *  Covered label – at teal segment
    * ------------------------------------------------- */
   if (coveredValue > 0) {
     final midAngle = startAngle + coveredAngle / 2;
     drawLegend(
-      text: '\$${coveredValue.toStringAsFixed(0)} Covered',
+      text: '$coveredVal Covered',
       midAngle: midAngle,
       align: midAngle.abs() < math.pi / 2 ? TextAlign.left : TextAlign.right,
     );
@@ -430,7 +488,7 @@ void _drawHandDrawnLegends(
   if (expiringValue > 0) {
     final midAngle = startAngle + coveredAngle + expiringAngle / 2;
     drawLegend(
-      text: 'expiring soon\n(\$${expiringValue.toStringAsFixed(0)})',
+      text: 'expiring soon\n($expiringVal)',
       midAngle: midAngle,
       align: midAngle.abs() < math.pi / 2 ? TextAlign.left : TextAlign.right,
     );

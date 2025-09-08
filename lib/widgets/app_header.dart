@@ -15,7 +15,7 @@ class AppHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.transparent,
+      color: Colors.red,
       padding:  EdgeInsets.fromLTRB(1, 1, 1, 1),
       child: Center(
         child:  Text(

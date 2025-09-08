@@ -49,7 +49,7 @@ class LatestSlipsSection extends StatelessWidget {
           const SizedBox(height: 16),
           // Slips List
           if (receipts.isEmpty)
-            _buildEmptyState()
+           Center(child: _buildEmptyState(),)
           else
             ...receipts.take(3).map((receipt) => _buildSlipCard(receipt)),
         ],
