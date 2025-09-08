@@ -21,7 +21,7 @@ class _LoginPageState extends State<LoginPage> {
       final userCredential = await signInWithGoogle();
       if (userCredential?.user != null) {
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/dashboard');
+          Navigator.pushReplacementNamed(context, '/warranty_tracker');
         }
       } else {
         if (mounted) {

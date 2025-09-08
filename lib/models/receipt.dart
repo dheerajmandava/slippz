@@ -1,4 +1,5 @@
 class Receipt {
+  final int? id;
   final String productName;
   final DateTime purchaseDate;
   final DateTime warrantyEndDate;
@@ -8,6 +9,7 @@ class Receipt {
   final String category;
 
   const Receipt({
+    this.id,
     required this.productName,
     required this.purchaseDate,
     required this.warrantyEndDate,
@@ -19,6 +21,7 @@ class Receipt {
 
   Map<String, dynamic> toMap() {
     return {
+      if (id != null) 'id': id,
       'productName': productName,
       'purchaseDate': purchaseDate.toIso8601String(),
       'warrantyEndDate': warrantyEndDate.toIso8601String(),
@@ -31,6 +34,7 @@ class Receipt {
 
   factory Receipt.fromMap(Map<String, dynamic> map) {
     return Receipt(
+      id: map['id'] as int?,
       productName: map['productName'] as String,
       purchaseDate: DateTime.parse(map['purchaseDate'] as String),
       warrantyEndDate: DateTime.parse(map['warrantyEndDate'] as String),

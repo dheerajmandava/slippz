@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/receipt.dart';
-import '../services/database_service.dart';
+import '../services/local_data_service.dart';
 import '../services/analytics_service.dart';
 
 class AnalyticsScreen extends StatefulWidget {
@@ -23,7 +23,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Future<void> _loadReceipts() async {
     try {
       setState(() => _isLoading = true);
-      final receipts = await DatabaseService().getAllReceipts();
+      final receipts = await LocalDataService.instance.getAllReceipts();
       setState(() {
         _receipts = receipts;
         _isLoading = false;
@@ -47,6 +47,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           IconButton(
             icon: const Icon(Icons.refresh, color: Color(0xFF111827)),
             onPressed: _loadReceipts,
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings, color: Color(0xFF111827)),
+            onPressed: () {
+              Navigator.pushNamed(context, '/local_storage');
+            },
+            tooltip: 'Local Storage Settings',
           ),
         ],
       ),

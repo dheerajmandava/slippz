@@ -3,18 +3,31 @@ import 'package:flutter/material.dart';
 import 'auth/login_page.dart';
 import 'receipt_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'widgets/receipt_list.dart';
-import 'screens/dashboard_screen.dart';
 import 'screens/analytics_screen.dart';
+import 'screens/warranty_list_screen.dart';
+import 'screens/warranty_tracker_screen.dart';
+import 'screens/local_storage_settings_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:sizer/sizer.dart';
+import 'services/local_data_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase (only for authentication)
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Initialize local data service
+  try {
+    await LocalDataService.instance.initialize();
+    print('Local data service initialized successfully');
+  } catch (e) {
+    print('Failed to initialize local data service: $e');
+  }
+  
   runApp(const MyApp());
 }
 
@@ -162,7 +175,6 @@ class MyApp extends StatelessWidget {
               ),
             ),
           ),
-          // Improved dropdown theme for better consistency
           dropdownMenuTheme: DropdownMenuThemeData(
             textStyle: const TextStyle(
               fontSize: 14,
@@ -178,12 +190,14 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        home: FirebaseAuth.instance.currentUser != null? DashboardScreen() : LoginPage(), // Set the login page as the home
+        home: FirebaseAuth.instance.currentUser != null? WarrantyTrackerScreen() : LoginPage(), // Set the login page as the home
         routes: {
           '/receipt_storage': (context) => const ReceiptStorage(),
-          '/receipt_list': (context) => const ReceiptList(),
-          '/dashboard': (context) => const DashboardScreen(),
+          '/receipt_list': (context) => const WarrantyListScreen(),
+          '/dashboard': (context) => const WarrantyTrackerScreen(),
           '/analytics': (context) => const AnalyticsScreen(),
+          '/warranty_tracker': (context) => const WarrantyTrackerScreen(),
+          '/local_storage': (context) => const LocalStorageSettingsScreen(),
         },
       );
       }

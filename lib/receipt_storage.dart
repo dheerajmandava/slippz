@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:sizer/sizer.dart';
 import 'models/receipt.dart';
-import 'services/database_service.dart';
+import 'services/local_data_service.dart';
 
-enum ReceiptSource { none, camera, gallery, file }
+enum ReceiptSource { none, camera, gallery }
 
 class ReceiptStorage extends StatefulWidget {
   final ReceiptSource initialSource;
@@ -18,11 +18,12 @@ class ReceiptStorage extends StatefulWidget {
 
 class _ReceiptStorageState extends State<ReceiptStorage> {
   final _formKey = GlobalKey<FormState>();
-  final _productNameController = TextEditingController();
-  final _storeNameController = TextEditingController();
-  final _purchaseDateController = TextEditingController();
-  final _warrantyEndDateController = TextEditingController();
-  final _priceController = TextEditingController();
+  late final TextEditingController _productNameController;
+  late final TextEditingController _storeNameController;
+  late final TextEditingController _purchaseDateController;
+  late final TextEditingController _warrantyEndDateController;
+  late final TextEditingController _priceController;
+  
   final List<String> _categories = [
     'Electronics',
     'Appliances',
@@ -40,6 +41,25 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    
+    // Initialize controllers with empty strings to prevent corruption
+    _productNameController = TextEditingController(text: '');
+    _storeNameController = TextEditingController(text: '');
+    _purchaseDateController = TextEditingController(text: '');
+    _warrantyEndDateController = TextEditingController(text: '');
+    _priceController = TextEditingController(text: '');
+    
+    // Debug logging
+    debugPrint('Controllers initialized successfully');
+    debugPrint('Product name controller text: "${_productNameController.text}"');
+    
+    // Autostart appropriate picker based on the entry point
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutostart());
+  }
+
+  @override
   void dispose() {
     _productNameController.dispose();
     _storeNameController.dispose();
@@ -49,11 +69,23 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
     super.dispose();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    // Autostart appropriate picker based on the entry point
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutostart());
+  // Helper method to check and fix corrupted controllers
+  void _validateAndFixControllers() {
+    final controllers = [
+      _productNameController,
+      _storeNameController,
+      _purchaseDateController,
+      _warrantyEndDateController,
+      _priceController,
+    ];
+    
+    for (final controller in controllers) {
+      if (controller.text.contains(RegExp(r'[┤├]'))) {
+        debugPrint('Detected corrupted controller, resetting...');
+        controller.text = '';
+        controller.selection = TextSelection.collapsed(offset: 0);
+      }
+    }
   }
 
   Future<void> _maybeAutostart() async {
@@ -63,9 +95,6 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
         break;
       case ReceiptSource.gallery:
         await _pickImage(ImageSource.gallery);
-        break;
-      case ReceiptSource.file:
-        await _pickFile();
         break;
       case ReceiptSource.none:
         break;
@@ -86,24 +115,6 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error picking image: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _pickFile() async {
-    try {
-      final result = await FilePicker.platform.pickFiles(type: FileType.image);
-      final pickedPath = result?.files.single.path;
-      if (pickedPath != null && mounted) {
-        setState(() {
-          _selectedImagePath = pickedPath;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking file: $e')),
         );
       }
     }
@@ -149,6 +160,11 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
     return _warrantyEndDate!.difference(now).inDays;
   }
 
+  String _sanitizeInput(String input) {
+    // Remove any potentially problematic characters
+    return input.replaceAll(RegExp(r'[^\w\s\-\.\,\(\)\/]'), '');
+  }
+
   Future<void> _addReceipt() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -158,8 +174,8 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
 
     try {
       final receipt = Receipt(
-        productName: _productNameController.text.trim(),
-        storeName: _storeNameController.text.trim(),
+        productName: _sanitizeInput(_productNameController.text.trim()),
+        storeName: _sanitizeInput(_storeNameController.text.trim()),
         purchaseDate: _purchaseDate ?? DateTime.now(),
         warrantyEndDate: _warrantyEndDate ?? DateTime.now().add(const Duration(days: 365)),
         receiptImagePath: _selectedImagePath ?? '',
@@ -167,7 +183,7 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
         category: _selectedCategory,
       );
 
-      await DatabaseService().insertReceipt(receipt);
+      await LocalDataService.instance.saveReceipt(receipt);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -197,7 +213,7 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
   }
 
   void _addCategoryDialog() {
-    final TextEditingController categoryController = TextEditingController();
+    final TextEditingController categoryController = TextEditingController(text: '');
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -215,18 +231,28 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
             hintText: 'Enter category name',
           ),
           autofocus: true,
+          onChanged: (value) {
+            // Sanitize input in real-time
+            final sanitized = _sanitizeInput(value);
+            if (sanitized != value) {
+              categoryController.value = categoryController.value.copyWith(
+                text: sanitized,
+                selection: TextSelection.collapsed(offset: sanitized.length),
+              );
+            }
+          },
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
+            child: const Text(
               'Cancel',
-              style: TextStyle(color: const Color(0xFF6B7280)),
+              style: TextStyle(color: Color(0xFF6B7280)),
             ),
           ),
           ElevatedButton(
             onPressed: () {
-              final newCategory = categoryController.text.trim();
+              final newCategory = _sanitizeInput(categoryController.text.trim());
               if (newCategory.isNotEmpty) {
                 setState(() {
                   _categories.add(newCategory);
@@ -244,103 +270,80 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Add Warranty',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF111827),
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF6B7280)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: const Color(0xFFE5E7EB),
-          ),
-        ),
-      ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with better hierarchy
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0FDF4),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFBBF7D0)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF10B981)),
-                      ),
-                      child: const Icon(
-                        Icons.shield,
-                        color: Color(0xFF10B981),
-                        size: 24,
-                      ),
+    // Validate and fix controllers before building
+    _validateAndFixControllers();
+
+    // Wrap the entire widget in Material to provide Material context
+    return Material(
+      color: Colors.white,
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.9,
+        child: Column(
+          children: [
+            // Drag handle
+            Container(
+              margin: EdgeInsets.only(top: 2.h),
+              width: 10.w,
+              height: 0.5.h,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD1D5DB),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SizedBox(height: 2.h),
+            
+            // Header
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4.w),
+              child: Row(
+                children: [
+                  Text(
+                    'Add Warranty',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF111827),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Warranty Details',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF111827),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Add your warranty information to track it',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: const Color(0xFF6B7280),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close, color: const Color(0xFF6B7280), size: 5.w),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 2.h),
+            
+            // Form content
+            Expanded(
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: 4.w),
+                  child: Column(
+                    children: [
+                      // Essential Fields
+                      _buildEssentialFields(),
+                      SizedBox(height: 2.h),
+                      
+                      // Additional Details
+                      _buildAdditionalDetails(),
+                      SizedBox(height: 2.h),
+                      
+                      // Photo Section
+                      _buildPhotoSection(),
+                      SizedBox(height: 3.h),
+                      
+                      // Action Buttons
+                      _buildActionButtons(),
+                      SizedBox(height: 2.h),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 24),
-              
-              // Photo section with better visual hierarchy
-              _buildPhotoSection(),
-              const SizedBox(height: 24),
-              
-              // Main form with progressive disclosure
-              _buildMainForm(),
-              const SizedBox(height: 24),
-              
-              // Optional details with expansion
-              _buildOptionalDetails(),
-              const SizedBox(height: 32),
-              
-              // Action buttons with better contrast
-              _buildActionButtons(),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -348,14 +351,13 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
 
   Widget _buildPhotoSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(5.w),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF111827).withOpacity(0.05),
+            color: Colors.white.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -366,34 +368,50 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.camera_alt,
-                color: const Color(0xFF10B981),
-                size: 20,
+              Container(
+                padding: EdgeInsets.all(2.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.camera_alt,
+                  color: const Color(0xFF10B981),
+                  size: 5.w,
+                ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 3.w),
               Text(
                 'Receipt Photo',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                style: TextStyle(
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF111827),
                 ),
               ),
               const Spacer(),
-              Text(
-                '(Optional)',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF9CA3AF),
-                  fontSize: 12,
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 1.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'Optional',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: const Color(0xFF6B7280),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 4.h),
           if (_selectedImagePath != null) ...[
             Container(
               width: double.infinity,
-              height: 200,
+              height: 40.h,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFE5E7EB)),
@@ -406,75 +424,148 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 3.h),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _pickImage(ImageSource.camera),
+                    icon: Icon(Icons.camera_alt, size: 4.w),
+                    label: Text('Retake', style: TextStyle(fontSize: 12.sp)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF10B981),
+                      side: const BorderSide(color: Color(0xFF10B981)),
+                      padding: EdgeInsets.symmetric(vertical: 2.h),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 2.w),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _pickImage(ImageSource.gallery),
+                    icon: Icon(Icons.photo_library, size: 4.w),
+                    label: Text('Change', style: TextStyle(fontSize: 12.sp)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF10B981),
+                      side: const BorderSide(color: Color(0xFF10B981)),
+                      padding: EdgeInsets.symmetric(vertical: 2.h),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            Container(
+              width: double.infinity,
+              height: 25.h,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFFE5E7EB),
+                  style: BorderStyle.solid,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_photo_alternate_outlined,
+                    size: 8.w,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    'Add receipt photo',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: const Color(0xFF9CA3AF),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 3.h),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _pickImage(ImageSource.camera),
+                    icon: Icon(Icons.camera_alt, size: 4.w),
+                    label: Text('Camera', style: TextStyle(fontSize: 12.sp)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 2.h),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 2.w),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _pickImage(ImageSource.gallery),
+                    icon: Icon(Icons.photo_library, size: 4.w),
+                    label: Text('Gallery', style: TextStyle(fontSize: 12.sp)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 2.h),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _pickImage(ImageSource.camera),
-                  icon: const Icon(Icons.camera_alt, size: 18),
-                  label: const Text('Camera'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _pickImage(ImageSource.gallery),
-                  icon: const Icon(Icons.photo_library, size: 18),
-                  label: const Text('Gallery'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _pickFile,
-                  icon: const Icon(Icons.folder, size: 18),
-                  label: const Text('File'),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildMainForm() {
+  Widget _buildEssentialFields() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(3.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF111827).withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Basic Information',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF111827),
-            ),
-          ),
-          const SizedBox(height: 20),
-          
           // Product name
           TextFormField(
             controller: _productNameController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Product Name *',
-              hintText: 'Enter product name',
-              prefixIcon: Icon(Icons.inventory, color: Color(0xFF10B981)),
+              hintText: 'e.g., iPhone 15 Pro',
+              floatingLabelBehavior: FloatingLabelBehavior.auto,
+              floatingLabelAlignment: FloatingLabelAlignment.start,
+              contentPadding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
+              filled: true,
+              fillColor: const Color(0xFFF9FAFB),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              enabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              border: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
             ),
+            style: TextStyle(fontSize: 11.sp),
+            onChanged: (value) {
+              // Sanitize input in real-time
+              final sanitized = _sanitizeInput(value);
+              if (sanitized != value) {
+                _productNameController.value = _productNameController.value.copyWith(
+                  text: sanitized,
+                  selection: TextSelection.collapsed(offset: sanitized.length),
+                );
+              }
+            },
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Product name is required';
@@ -482,23 +573,39 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 1.5.h),
           
           // Warranty end date
           TextFormField(
             controller: _warrantyEndDateController,
             decoration: InputDecoration(
               labelText: 'Warranty End Date *',
-              hintText: 'Select end date',
-              prefixIcon: const Icon(Icons.calendar_today, color: Color(0xFF10B981)),
+              hintText: 'Select when warranty expires',
               suffixIcon: IconButton(
-                icon: const Icon(Icons.calendar_month),
+                icon: Icon(Icons.calendar_month, color: const Color(0xFF10B981), size: 4.w),
                 onPressed: () => _selectDate(context, false),
               ),
               helperText: _warrantyEndDate != null 
                 ? '${_calculateDaysUntilExpiry()} days remaining'
-                : null,
+                : 'When does your warranty expire?',
+              helperStyle: TextStyle(fontSize: 9.sp),
+              contentPadding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
+              filled: true,
+              fillColor: const Color(0xFFF9FAFB),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              enabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              border: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
             ),
+            style: TextStyle(fontSize: 11.sp),
             readOnly: true,
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -512,142 +619,170 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
     );
   }
 
-  Widget _buildOptionalDetails() {
+  Widget _buildAdditionalDetails() {
     return Container(
+      padding: EdgeInsets.all(3.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF111827).withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: ExpansionTile(
-        title: Row(
-          children: [
-            Icon(
-              Icons.more_horiz,
-              color: const Color(0xFF10B981),
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Additional Details',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF111827),
-              ),
-            ),
-            const Spacer(),
-            Text(
-              '(Optional)',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF9CA3AF),
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
+      child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                // Store name
-                TextFormField(
-                  controller: _storeNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Store Name',
-                    hintText: 'Enter store name',
-                    prefixIcon: Icon(Icons.store, color: Color(0xFF10B981)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Purchase date
-                TextFormField(
-                  controller: _purchaseDateController,
-                  decoration: InputDecoration(
-                    labelText: 'Purchase Date',
-                    hintText: 'Select purchase date',
-                    prefixIcon: const Icon(Icons.shopping_cart, color: Color(0xFF10B981)),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.calendar_month),
-                      onPressed: () => _selectDate(context, true),
-                    ),
-                  ),
-                  readOnly: true,
-                ),
-                const SizedBox(height: 16),
-                
-                // Price
-                TextFormField(
-                  controller: _priceController,
-                  decoration: const InputDecoration(
-                    labelText: 'Price',
-                    hintText: 'Enter price',
-                    prefixIcon: Icon(Icons.attach_money, color: Color(0xFF10B981)),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                
-                // Category
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Category',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF374151),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        ..._categories.map((category) => FilterChip(
-                          label: Text(category),
-                          selected: _selectedCategory == category,
-                          onSelected: (selected) {
-                            setState(() {
-                              _selectedCategory = category;
-                            });
-                          },
-                          selectedColor: const Color(0xFF10B981).withOpacity(0.2),
-                          checkmarkColor: const Color(0xFF10B981),
-                          labelStyle: TextStyle(
-                            color: _selectedCategory == category 
-                              ? const Color(0xFF10B981) 
-                              : const Color(0xFF6B7280),
-                            fontWeight: _selectedCategory == category 
-                              ? FontWeight.w600 
-                              : FontWeight.w500,
-                          ),
-                        )),
-                        FilterChip(
-                          label: const Text('+ Add'),
-                          selected: false,
-                          onSelected: (_) => _addCategoryDialog(),
-                          selectedColor: const Color(0xFF10B981).withOpacity(0.2),
-                          checkmarkColor: const Color(0xFF10B981),
-                          labelStyle: const TextStyle(
-                            color: Color(0xFF10B981),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+          // Store name
+          TextFormField(
+            controller: _storeNameController,
+            decoration: InputDecoration(
+              labelText: 'Store Name',
+              hintText: 'e.g., Apple Store, Best Buy',
+              contentPadding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
+              filled: true,
+              fillColor: const Color(0xFFF9FAFB),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              enabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              border: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
             ),
+            style: TextStyle(fontSize: 11.sp),
+            onChanged: (value) {
+              final sanitized = _sanitizeInput(value);
+              if (sanitized != value) {
+                _storeNameController.value = _storeNameController.value.copyWith(
+                  text: sanitized,
+                  selection: TextSelection.collapsed(offset: sanitized.length),
+                );
+              }
+            },
+          ),
+          SizedBox(height: 1.5.h),
+          
+          // Purchase date
+          TextFormField(
+            controller: _purchaseDateController,
+            decoration: InputDecoration(
+              labelText: 'Purchase Date',
+              hintText: 'When did you buy this?',
+              suffixIcon: IconButton(
+                icon: Icon(Icons.calendar_month, color: const Color(0xFF10B981), size: 4.w),
+                onPressed: () => _selectDate(context, true),
+              ),
+              contentPadding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
+              filled: true,
+              fillColor: const Color(0xFFF9FAFB),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              enabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              border: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+            ),
+            style: TextStyle(fontSize: 11.sp),
+            readOnly: true,
+          ),
+          SizedBox(height: 1.5.h),
+          
+          // Price
+          TextFormField(
+            controller: _priceController,
+            decoration: InputDecoration(
+              labelText: 'Price',
+              hintText: '0.00',
+              contentPadding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
+              filled: true,
+              fillColor: const Color(0xFFF9FAFB),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              enabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              border: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+            ),
+            style: TextStyle(fontSize: 11.sp),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (value) {
+              // Only allow numbers, decimal points, and basic characters
+              final sanitized = value.replaceAll(RegExp(r'[^\d\.]'), '');
+              if (sanitized != value) {
+                _priceController.value = _priceController.value.copyWith(
+                  text: sanitized,
+                  selection: TextSelection.collapsed(offset: sanitized.length),
+                );
+              }
+            },
+          ),
+          SizedBox(height: 1.5.h),
+          
+          // Category
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Category',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+              SizedBox(height: 2.h),
+              Wrap(
+                spacing: 2.w,
+                runSpacing: 2.h,
+                children: [
+                  ..._categories.map((category) => FilterChip(
+                    label: Text(category, style: TextStyle(fontSize: 11.sp)),
+                    selected: _selectedCategory == category,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedCategory = category;
+                      });
+                    },
+                    selectedColor: const Color(0xFF10B981).withOpacity(0.2),
+                    checkmarkColor: const Color(0xFF10B981),
+                    labelStyle: TextStyle(
+                      color: _selectedCategory == category 
+                        ? const Color(0xFF10B981) 
+                        : const Color(0xFF6B7280),
+                      fontWeight: _selectedCategory == category 
+                        ? FontWeight.w600 
+                        : FontWeight.w500,
+                      fontSize: 11.sp,
+                    ),
+                  )),
+                  FilterChip(
+                    label: Text('+ Add', style: TextStyle(fontSize: 11.sp)),
+                    selected: false,
+                    onSelected: (_) => _addCategoryDialog(),
+                    selectedColor: const Color(0xFF10B981).withOpacity(0.2),
+                    checkmarkColor: const Color(0xFF10B981),
+                    labelStyle: TextStyle(
+                      color: const Color(0xFF10B981),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -657,36 +792,55 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
   Widget _buildActionButtons() {
     return Row(
       children: [
+        // Cancel Button
         Expanded(
           child: OutlinedButton(
             onPressed: () => Navigator.pop(context),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF6B7280),
+              side: const BorderSide(color: Color(0xFFE5E7EB)),
+              padding: EdgeInsets.symmetric(vertical: 1.5.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
             child: Text(
               'Cancel',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: const Color(0xFF6B7280),
+              style: TextStyle(
+                fontSize: 11.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: 2.w),
+        // Save Button
         Expanded(
           flex: 2,
           child: ElevatedButton(
             onPressed: _isLoading ? null : _addReceipt,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: EdgeInsets.symmetric(vertical: 1.5.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
             child: _isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
+                ? SizedBox(
+                    height: 3.w,
+                    width: 3.w,
+                    child: const CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
                 : Text(
                     'Save Warranty',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
+                    style: TextStyle(
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
