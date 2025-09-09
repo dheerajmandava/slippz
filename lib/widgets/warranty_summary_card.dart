@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../services/currency_service.dart';
 import 'dart:math' as math;
 import 'package:sizer/sizer.dart';
@@ -34,33 +33,27 @@ class _WarrantySummaryCardState extends State<WarrantySummaryCard> {
         padding: EdgeInsets.all(2.w),
         child: Column(
           children: [
-            const SizedBox(height: 40),
-            const Icon(
+            Icon(
               Icons.receipt_long,
               size: 64,
-              color: Color(0xFF9CA3AF),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'No warranties yet',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
-                fontFamily: 'Arial',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             SizedBox(height: 2.h),
             Text(
               'Add your first receipt to get started',
-              style: TextStyle(
-                fontSize: 10.sp,
-                color: Color(0xFF9CA3AF),
-                fontFamily: 'Arial',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 40),
+            SizedBox(height: 2.h),
           ],
         ),
       );
@@ -70,86 +63,73 @@ class _WarrantySummaryCardState extends State<WarrantySummaryCard> {
       padding: EdgeInsets.all(2.w),
       child: Column(
         children: [
-          // Total Value Section with Privacy Toggle (Top Right)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          SizedBox(height: 4.h),
+          CustomPaint(
+            size: Size(100.w, 17.h),
+            painter: HandDrawnDonutChartPainter(
+              coveredValue: widget.coveredValue,
+              expiringValue: widget.expiringValue,
+              totalValue: widget.totalValue,
+              coveredVal: widget.coveredVal,
+              expiringVal: widget.expiringVal,
+              context: context,
+            ),
+          ),
+          // Total Value Section with Privacy Toggle (Centered)
+         
+          SizedBox(height: 8.h),
+           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Spacer(),
-              Expanded(
-                flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        FutureBuilder<String>(
-                          future: CurrencyService.formatAmountNoDecimals(widget.totalValue),
-                          builder: (context, snap) {
-                            final formatted = snap.data ?? '\${widget.totalValue.toStringAsFixed(0)}';
-                            return Text(
-                              _showTotalValue 
-                                ? 'Total: ${formatted.replaceAllMapped(
-                                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                                    (Match m) => '${m[1]},',
-                                  )}'
-                                : 'Total: ••••••',
-                              style: GoogleFonts.inter(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w400,
-                                color: const Color.fromARGB(255, 49, 58, 63),
-                                letterSpacing: 0.3,
-                              ),
-                            );
-                          },
+              ValueListenableBuilder<String>(
+                valueListenable: CurrencyService.currencyNotifier,
+                builder: (context, currencyCode, child) {
+                  return FutureBuilder<String>(
+                    future: CurrencyService.formatAmountNoDecimals(widget.totalValue),
+                    builder: (context, snap) {
+                      final formatted = snap.data ?? '$currencyCode${widget.totalValue.toStringAsFixed(0)}';
+                      return Text(
+                        _showTotalValue 
+                          ? 'Total: ${formatted.replaceAllMapped(
+                              RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                              (Match m) => '${m[1]},',
+                            )}'
+                          : 'Total: ••••••',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.3,
                         ),
-                        SizedBox(width: 2.w),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _showTotalValue = !_showTotalValue;
-                            });
-                          },
-                          child: Container(
-                            padding: EdgeInsets.all(1.w),
-                            decoration: BoxDecoration(
-                              color: _showTotalValue  
-                                ? const Color(0xFF10B981).withValues(alpha: 0.1)
-                                : const Color(0xFF6B7280).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Icon(
-                              _showTotalValue ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                              size: 4.w,
-                              color: _showTotalValue 
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFF6B7280),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                      );
+                    },
+                  );
+                },
+              ),
+              SizedBox(width: 2.w),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showTotalValue = !_showTotalValue;
+                  });
+                },
+                child: Container(
+                  padding: EdgeInsets.all(1.w),
+                  decoration: BoxDecoration(
+                    color: _showTotalValue  
+                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+                      : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    _showTotalValue ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    size: 4.w,
+                    color: _showTotalValue 
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],
-          ),
-          SizedBox(height: 2.h),
-          
-          // Donut Chart Section
-          SizedBox(
-            height: 20.h,
-            child: CustomPaint(
-              size: Size(100.w, 20.h),
-              painter: HandDrawnDonutChartPainter(
-                coveredValue: widget.coveredValue,
-                expiringValue: widget.expiringValue,
-                totalValue: widget.totalValue,
-                coveredVal: widget.coveredVal,
-                expiringVal: widget.expiringVal
-              ),
-            ),
           ),
         ],
       ),
@@ -163,21 +143,23 @@ class HandDrawnDonutChartPainter extends CustomPainter {
   final double totalValue;
   final coveredVal;
   final expiringVal;
+  final BuildContext context;
 
   HandDrawnDonutChartPainter( {
     required this.coveredValue,
     required this.expiringValue,
     required this.totalValue,
     required this.coveredVal,
-    required this.expiringVal
+    required this.expiringVal,
+    required this.context,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     // Donut chart positioning
     final donutCenter = Offset(size.width / 2, size.height * 0.45);
-    final donutRadius = size.width * 0.25; // Slightly smaller for better proportions
-    final strokeWidth = size.width * 0.08;
+    final donutRadius = size.width * 0.22; 
+    final strokeWidth = size.width * 0.07;
 
     // Draw the hand-drawn donut chart
     _drawHandDrawnDonutChart(canvas, donutCenter, donutRadius, strokeWidth);
@@ -188,11 +170,11 @@ class HandDrawnDonutChartPainter extends CustomPainter {
 
   Path _createHandDrawnCircle(Offset center, double radius, {int points = 80, double wobble = 1.5}) {
     final path = Path();
-    final random = math.Random(42); // Fixed seed for consistent randomness
+    final random = math.Random(42);
     
     for (int i = 0; i <= points; i++) {
       final angle = (i / points) * 2 * math.pi;
-      final wobbleAmount = wobble * (0.7 + random.nextDouble() * 0.3);
+      final wobbleAmount = wobble * (0.7 + random.nextDouble() * 0.8);
       final r = radius + (random.nextDouble() - 0.5) * wobbleAmount;
       
       final x = center.dx + r * math.cos(angle);
@@ -227,7 +209,7 @@ class HandDrawnDonutChartPainter extends CustomPainter {
     if (segmentTotal == 0) {
       // Empty donut with hand-drawn effect
       final paint = Paint()
-        ..color = const Color(0xFFE5E7EB)
+        ..color = const Color(0xFF374151)
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round;
@@ -266,7 +248,7 @@ class HandDrawnDonutChartPainter extends CustomPainter {
     // Draw expiring segment (yellow/amber) as filled area
     if (expiringAngle > 0) {
       final expiringPaint = Paint()
-        ..color = const Color(0xFFF59E0B)
+        ..color = const Color(0xFFFACC15)
         ..style = PaintingStyle.fill;
       
       final segmentPath = _createSegmentPath(center, radius, strokeWidth, startAngle + coveredAngle, expiringAngle);
@@ -420,7 +402,7 @@ Future<void> _drawHandDrawnLegends(
   final textStyle = TextStyle(
     fontSize: size.width * 0.035,
     fontWeight: FontWeight.w600,
-    color: Colors.black,
+    color: Theme.of(context).colorScheme.onSurface,
     fontFamily: 'Arial',
   );
 
@@ -500,6 +482,8 @@ Future<void> _drawHandDrawnLegends(
     return oldDelegate is HandDrawnDonutChartPainter &&
         (oldDelegate.coveredValue != coveredValue ||
          oldDelegate.expiringValue != expiringValue ||
-         oldDelegate.totalValue != totalValue);
+         oldDelegate.totalValue != totalValue ||
+         oldDelegate.coveredVal != coveredVal ||
+         oldDelegate.expiringVal != expiringVal);
   }
 }

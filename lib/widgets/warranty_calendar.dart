@@ -67,7 +67,7 @@ class _WarrantyCalendarState extends State<WarrantyCalendar> {
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF111827),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             SizedBox(width: 2.w),
@@ -89,13 +89,13 @@ class _WarrantyCalendarState extends State<WarrantyCalendar> {
         width: 8.w,
         height: 8.w,
         decoration: BoxDecoration(
-          color: const Color(0xFFF3F4F6),
+          color: Theme.of(context).colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
           icon,
           size: 4.w,
-          color: const Color(0xFF6B7280),
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
     );
@@ -130,18 +130,18 @@ class _WarrantyCalendarState extends State<WarrantyCalendar> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
       ),
       child: Column(
         children: [
           // Compact weekday headers
           Container(
             padding: EdgeInsets.symmetric(vertical: 1.h),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF9FAFB),
-              borderRadius: BorderRadius.only(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceVariant,
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
               ),
@@ -155,7 +155,7 @@ class _WarrantyCalendarState extends State<WarrantyCalendar> {
                             style: TextStyle(
                               fontSize: 9.sp,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF6B7280),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -198,7 +198,7 @@ class _WarrantyCalendarState extends State<WarrantyCalendar> {
             color: _getDateBackgroundColor(warrantyStatus, isToday),
             borderRadius: BorderRadius.circular(6),
             border: isToday 
-                ? Border.all(color: const Color(0xFF10B981), width: 1.5)
+                ? Border.all(color: Theme.of(context).colorScheme.primary, width: 1.5)
                 : null,
           ),
           child: Stack(
@@ -264,7 +264,7 @@ class _WarrantyCalendarState extends State<WarrantyCalendar> {
           style: TextStyle(
             fontSize: 8.sp,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF6B7280),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ],
@@ -312,7 +312,7 @@ class _WarrantyCalendarState extends State<WarrantyCalendar> {
 
   Color _getDateBackgroundColor(String? status, bool isToday) {
     if (isToday) {
-      return const Color(0xFFF0FDF4);
+      return Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
     }
     if (status == null) {
       return Colors.transparent;
@@ -320,13 +320,13 @@ class _WarrantyCalendarState extends State<WarrantyCalendar> {
     
     switch (status) {
       case 'urgent':
-        return const Color(0xFFFEF2F2);
+        return const Color(0xFFEF4444).withValues(alpha: 0.1);
       case 'expiring':
-        return const Color(0xFFFFFBEB);
+        return const Color(0xFFF59E0B).withValues(alpha: 0.1);
       case 'expired':
-        return const Color(0xFFF9FAFB);
+        return Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1);
       case 'active':
-        return const Color(0xFFF0FDF4);
+        return Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
       default:
         return Colors.transparent;
     }
@@ -334,13 +334,13 @@ class _WarrantyCalendarState extends State<WarrantyCalendar> {
 
   Color _getDateTextColor(String? status, bool isCurrentMonth, bool isToday) {
     if (isToday) {
-      return const Color(0xFF10B981);
+      return Theme.of(context).colorScheme.primary;
     }
     if (!isCurrentMonth) {
-      return const Color(0xFFD1D5DB);
+      return Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5);
     }
     if (status == null) {
-      return const Color(0xFF111827);
+      return Theme.of(context).colorScheme.onSurface;
     }
     
     switch (status) {
@@ -349,11 +349,11 @@ class _WarrantyCalendarState extends State<WarrantyCalendar> {
       case 'expiring':
         return const Color(0xFFF59E0B);
       case 'expired':
-        return const Color(0xFF6B7280);
+        return Theme.of(context).colorScheme.onSurfaceVariant;
       case 'active':
-        return const Color(0xFF10B981);
+        return Theme.of(context).colorScheme.primary;
       default:
-        return const Color(0xFF111827);
+        return Theme.of(context).colorScheme.onSurface;
     }
   }
 
@@ -364,11 +364,11 @@ class _WarrantyCalendarState extends State<WarrantyCalendar> {
       case 'expiring':
         return const Color(0xFFF59E0B);
       case 'expired':
-        return const Color(0xFF6B7280);
+        return Theme.of(context).colorScheme.onSurfaceVariant;
       case 'active':
-        return const Color(0xFF10B981);
+        return Theme.of(context).colorScheme.primary;
       default:
-        return const Color(0xFF6B7280);
+        return Theme.of(context).colorScheme.onSurfaceVariant;
     }
   }
 }

@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/local_data_service.dart';
+import '../services/settings_service.dart';
 import '../services/currency_service.dart';
+import '../widgets/theme_switcher.dart';
 import 'package:world_countries/world_countries.dart';
 
 class LocalStorageSettingsScreen extends StatefulWidget {
@@ -140,26 +142,23 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Local Storage',
-          style: GoogleFonts.inter(
-            fontSize: 18.sp,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF111827),
           ),
         ),
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF111827)),
+          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF10B981)),
+          ? Center(
+              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
             )
           : SingleChildScrollView(
               padding: EdgeInsets.all(4.w),
@@ -173,8 +172,10 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
                   // Currency
                   _buildCurrencySection(),
                   SizedBox(height: 4.h),
-
-                  // Data Management Section
+                  _buildThemeSection(),
+                  SizedBox(height: 4.h),
+                  _buildExpiringThresholdSection(),
+                  SizedBox(height: 4.h),
                   _buildDataManagementSection(),
                   SizedBox(height: 4.h),
                   
@@ -190,7 +191,7 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
     return Container(
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -208,22 +209,20 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
               Container(
                 padding: EdgeInsets.all(2.w),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF14B8A6).withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.attach_money,
-                  color: const Color(0xFF14B8A6),
+                  color: Theme.of(context).colorScheme.primary,
                   size: 5.w,
                 ),
               ),
               SizedBox(width: 3.w),
               Text(
                 'Currency',
-                style: GoogleFonts.inter(
-                  fontSize: 16.sp,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF111827),
                 ),
               ),
             ],
@@ -238,7 +237,7 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
                   
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Currency set to ${currency.code} ($Currency)'),
+                      content: Text('Currency set to ${currency.code} (${currency.symbol})'),
                       backgroundColor: const Color(0xFF10B981),
                     ),
                   );
@@ -264,7 +263,7 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
     return Container(
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -282,22 +281,20 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
               Container(
                 padding: EdgeInsets.all(2.w),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.storage,
-                  color: const Color(0xFF10B981),
+                  color: Theme.of(context).colorScheme.primary,
                   size: 5.w,
                 ),
               ),
               SizedBox(width: 3.w),
               Text(
                 'Storage Information',
-                style: GoogleFonts.inter(
-                  fontSize: 16.sp,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF111827),
                 ),
               ),
             ],
@@ -321,28 +318,26 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
-              fontSize: 14.sp,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF6B7280),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 1.h),
             decoration: BoxDecoration(
               color: isStatus 
-                  ? const Color(0xFF10B981).withOpacity(0.1)
-                  : const Color(0xFFF3F4F6),
+                  ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                  : Theme.of(context).colorScheme.surfaceVariant,
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
               value,
-              style: GoogleFonts.inter(
-                fontSize: 12.sp,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: isStatus 
-                    ? const Color(0xFF10B981)
-                    : const Color(0xFF111827),
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -355,7 +350,7 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
     return Container(
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -373,22 +368,20 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
               Container(
                 padding: EdgeInsets.all(2.w),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.settings,
-                  color: const Color(0xFF6366F1),
+                  color: Theme.of(context).colorScheme.secondary,
                   size: 5.w,
                 ),
               ),
               SizedBox(width: 3.w),
               Text(
                 'Data Management',
-                style: GoogleFonts.inter(
-                  fontSize: 16.sp,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF111827),
                 ),
               ),
             ],
@@ -398,7 +391,7 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
             'Export Data',
             'Export all data to JSON file',
             Icons.download,
-            const Color(0xFF10B981),
+            Theme.of(context).colorScheme.primary,
             _exportData,
           ),
           SizedBox(height: 2.h),
@@ -406,7 +399,7 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
             'Create Backup',
             'Create a backup of your data',
             Icons.backup,
-            const Color(0xFF6366F1),
+            Theme.of(context).colorScheme.secondary,
             _createBackup,
           ),
           SizedBox(height: 2.h),
@@ -414,7 +407,7 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
             'Clear All Data',
             'Permanently delete all data',
             Icons.delete_forever,
-            const Color(0xFFEF4444),
+            Theme.of(context).colorScheme.error,
             _clearAllData,
             isDestructive: true,
           ),
@@ -439,8 +432,8 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
         decoration: BoxDecoration(
           border: Border.all(
             color: isDestructive 
-                ? const Color(0xFFEF4444).withOpacity(0.2)
-                : const Color(0xFFE5E7EB),
+                ? Theme.of(context).colorScheme.error.withOpacity(0.2)
+                : Theme.of(context).colorScheme.outline.withOpacity(0.2),
           ),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -465,18 +458,15 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.inter(
-                      fontSize: 14.sp,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF111827),
                     ),
                   ),
                   SizedBox(height: 0.5.h),
                   Text(
                     subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 12.sp,
-                      color: const Color(0xFF6B7280),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -484,7 +474,7 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
             ),
             Icon(
               Icons.arrow_forward_ios,
-              color: const Color(0xFF9CA3AF),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               size: 3.w,
             ),
           ],
@@ -497,7 +487,7 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
     return Container(
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -515,22 +505,20 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
               Container(
                 padding: EdgeInsets.all(2.w),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B).withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.tertiary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.folder,
-                  color: const Color(0xFFF59E0B),
+                  color: Theme.of(context).colorScheme.tertiary,
                   size: 5.w,
                 ),
               ),
               SizedBox(width: 3.w),
               Text(
                 'Storage Paths',
-                style: GoogleFonts.inter(
-                  fontSize: 16.sp,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF111827),
                 ),
               ),
             ],
@@ -555,10 +543,8 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
-              fontSize: 12.sp,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF111827),
             ),
           ),
           SizedBox(height: 0.5.h),
@@ -566,17 +552,164 @@ class _LocalStorageSettingsScreenState extends State<LocalStorageSettingsScreen>
             width: double.infinity,
             padding: EdgeInsets.all(2.w),
             decoration: BoxDecoration(
-              color: const Color(0xFFF9FAFB),
+              color: Theme.of(context).colorScheme.surfaceVariant,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
             ),
             child: Text(
               path,
-              style: GoogleFonts.inter(
-                fontSize: 10.sp,
-                color: const Color(0xFF6B7280)
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeSection() {
+    return Container(
+      padding: EdgeInsets.all(4.w),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(2.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.palette,
+                  color: const Color(0xFF8B5CF6),
+                  size: 5.w,
+                ),
+              ),
+              SizedBox(width: 3.w),
+              Text(
+                'Theme',
+                style: GoogleFonts.inter(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 3.h),
+          const ThemeSwitcher(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpiringThresholdSection() {
+    return Container(
+      padding: EdgeInsets.all(4.w),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(2.w),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.tertiary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.schedule,
+                  color: Theme.of(context).colorScheme.tertiary,
+                  size: 5.w,
+                ),
+              ),
+              SizedBox(width: 3.w),
+              Text(
+                'Warranty Alerts',
+                style: GoogleFonts.inter(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 3.h),
+          Text(
+            'Get notified when warranties are about to expire',
+            style: GoogleFonts.inter(
+              fontSize: 14.sp,
+              color: const Color(0xFF6B7280),
+            ),
+          ),
+          SizedBox(height: 2.h),
+          FutureBuilder<int>(
+            future: SettingsService.getExpiringThreshold(),
+            builder: (context, snapshot) {
+              final days = snapshot.data ?? 30;
+              return Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Alert $days days before expiry',
+                        style: GoogleFonts.inter(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                      Text(
+                        '$days days',
+                        style: GoogleFonts.inter(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF10B981),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 2.h),
+                  Slider(
+                    value: days.toDouble(),
+                    min: 7,
+                    max: 90,
+                    divisions: 83,
+                    activeColor: const Color(0xFF10B981),
+                    onChanged: (value) async {
+                      await SettingsService.setExpiringThreshold(value.round());
+                      setState(() {});
+                    },
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

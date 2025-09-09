@@ -16,7 +16,8 @@ class WarrantyTrackerScreen extends StatefulWidget {
   State<WarrantyTrackerScreen> createState() => _WarrantyTrackerScreenState();
 }
 
-class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
+class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> with WidgetsBindingObserver {
+
   List<Receipt> _receipts = [];
   bool _isLoading = true;
   double _coveredValue = 0.0;
@@ -28,7 +29,31 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadData();
+    // Initialize currency notifier
+    CurrencyService.getSelectedCode();
+    // Listen for currency changes
+    CurrencyService.currencyNotifier.addListener(_onCurrencyChanged);
+  }
+  
+  void _onCurrencyChanged() {
+    // Refresh data when currency changes
+    _loadData();
+  }
+  
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    CurrencyService.currencyNotifier.removeListener(_onCurrencyChanged);
+    super.dispose();
+  }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadData(); // Refresh when app comes back to foreground
+    }
   }
 
   Future<void> _loadData() async {
@@ -50,7 +75,7 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to load data: $e'),
-            backgroundColor: const Color(0xFFEF4444),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -95,9 +120,9 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
         title: Text(
           'Slippz',
           style: GoogleFonts.timmana(
-            fontSize: 24.sp,
+            fontSize: 32.sp,
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF111827),
+            color: Theme.of(context).colorScheme.onSurface,
             letterSpacing: -0.5,
           ),
         ),
@@ -118,7 +143,7 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
             },
             icon: Icon(
               Icons.settings,
-              color: const Color(0xFF6B7280),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               size: 5.w,
             ),
             tooltip: 'Local Storage Settings',
@@ -126,20 +151,24 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
+        onPressed: () async {
           try {
-            Navigator.push(
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const ReceiptStorage()),
             );
+            if (result == true) {
+              _loadData(); // Refresh data when returning from add receipt
+            }
           } catch (e) {
+            // Handle error silently
           }
         },
-        backgroundColor: const Color.fromARGB(255, 48, 47, 47),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         child: const Icon(Icons.add),
       ),
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -148,15 +177,15 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
                   ? _buildLoadingState()
                   : RefreshIndicator(
                       onRefresh: _loadData,
-                      color: const Color(0xFF10B981),
-                      backgroundColor: Colors.white,
+                      color: Theme.of(context).colorScheme.primary,
+                      backgroundColor: Theme.of(context).colorScheme.surface,
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            
+                          
                           Center(child: WarrantySummaryCard(
                             coveredValue: _coveredValue,
                             expiringValue: _expiringValue,
@@ -164,8 +193,9 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
                             coveredVal:coveredVal,
                             expiringVal:expiringVal
                           ),),
-                
-                          SizedBox(height: 10.h),
+
+                          SizedBox(height: 4.h),
+
                           _buildTopRow(),
                           
                           SizedBox(height: 2.h),
@@ -233,7 +263,7 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
                 Container(
                   height: 0.8.h,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE5E7EB),
+                    color: Theme.of(context).colorScheme.surfaceVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                   child: Row(
@@ -243,7 +273,7 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
                           flex: urgentCount,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEF4444),
+                              color: Theme.of(context).colorScheme.error,
                               borderRadius: BorderRadius.circular(2),
                             ),
                             child: Container(height: 10.h,),
@@ -254,7 +284,7 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
                           flex: expiringCount,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF59E0B),
+                              color: Theme.of(context).colorScheme.tertiary,
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -264,7 +294,7 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
                           flex: coveredCount,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981),
+                              color: Theme.of(context).colorScheme.primary,
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -279,7 +309,7 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
                   style: GoogleFonts.pacifico(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF6B7280),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -295,9 +325,14 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
               
               text: 'View Slips',
               icon: Icons.arrow_forward_ios,
-              backgroundColor: const Color.fromARGB(255, 48, 47, 47),
-              textColor: Colors.white,
-              onPressed: () => Navigator.pushNamed(context, '/receipt_list'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              textColor: Theme.of(context).colorScheme.onPrimary,
+              onPressed: () async {
+                final result = await Navigator.pushNamed(context, '/receipt_list');
+                if (result == true) {
+                  _loadData(); // Refresh data when returning from list
+                }
+              },
             ),
           ),
           
@@ -312,15 +347,14 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
-            color: const Color(0xFF10B981),
+            color: Theme.of(context).colorScheme.primary,
             strokeWidth: 3,
           ),
           SizedBox(height: 4.h),
           Text(
             'Loading your warranties...',
-            style: TextStyle(
-              color: const Color(0xFF6B7280),
-              fontSize: 14.sp,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w500,
             ),
           ),

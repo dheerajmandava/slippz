@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'package:sizer/sizer.dart';
 import '../models/receipt.dart';
@@ -25,10 +24,10 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
 
   final List<Map<String, dynamic>> _filterOptions = [
     {'label': 'All', 'value': 'All', 'icon': Icons.list},
-    {'label': 'Urgent', 'value': 'Urgent', 'icon': Icons.warning, 'color': const Color(0xFFEF4444)},
-    {'label': 'Expiring', 'value': 'Expiring', 'icon': Icons.schedule, 'color': const Color(0xFFF59E0B)},
-    {'label': 'Covered', 'value': 'Covered', 'icon': Icons.check_circle, 'color': const Color(0xFF10B981)},
-    {'label': 'Expired', 'value': 'Expired', 'icon': Icons.cancel, 'color': const Color(0xFF6B7280)},
+    {'label': 'Urgent', 'value': 'Urgent', 'icon': Icons.warning},
+    {'label': 'Expiring', 'value': 'Expiring', 'icon': Icons.schedule},
+    {'label': 'Covered', 'value': 'Covered', 'icon': Icons.check_circle},
+    {'label': 'Expired', 'value': 'Expired', 'icon': Icons.cancel},
   ];
 
   @override
@@ -56,7 +55,7 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading warranties: $e'),
-            backgroundColor: const Color(0xFFEF4444),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -117,7 +116,7 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -154,7 +153,7 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w400,
-                color: const Color(0xFF111827),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -166,19 +165,11 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
               children: [
                 Text(
                   'My Warranties',
-                  style: GoogleFonts.inter(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF111827),
-                  ),
+                  style: Theme.of(context).textTheme.displaySmall,
                 ),
                 Text(
                   '${_filteredReceipts.length} items',
-                  style: GoogleFonts.inter(
-                    fontSize: 11.sp,
-                    color: const Color(0xFF6B7280),
-                    fontWeight: FontWeight.w400,
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
             ),
@@ -191,20 +182,23 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w400,
-                color: const Color(0xFF6B7280),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
           SizedBox(width: 3.w),
           // Settings button
           GestureDetector(
-            onTap: () {
-              Navigator.pushNamed(context, '/local_storage');
+            onTap: () async {
+              final result = await Navigator.pushNamed(context, '/local_storage');
+              if (result == true) {
+                _loadData(); // Refresh when returning from settings
+              }
             },
             child: Icon(
               Icons.settings,
               size: 5.w,
-              color: const Color(0xFF6B7280),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -224,40 +218,32 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
         },
         decoration: InputDecoration(
           hintText: 'search...',
-          hintStyle: GoogleFonts.inter(
-            fontSize: 13.sp,
-            color: const Color(0xFF9CA3AF),
-            fontWeight: FontWeight.w400,
-          ),
+          hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
           // prefixIcon: Text(
           //   '🔍',
           //   style: TextStyle(fontSize: 14.sp),
           // ),
           border: UnderlineInputBorder(
             borderSide: BorderSide(
-              color: const Color(0xFFE5E7EB),
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
               width: 1,
             ),
           ),
           enabledBorder: UnderlineInputBorder(
             borderSide: BorderSide(
-              color: const Color(0xFFE5E7EB),
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
               width: 1,
             ),
           ),
           focusedBorder: UnderlineInputBorder(
             borderSide: BorderSide(
-              color: const Color(0xFF111827),
+              color: Theme.of(context).colorScheme.primary,
               width: 1.5,
             ),
           ),
           contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 2.h),
         ),
-        style: GoogleFonts.inter(
-          fontSize: 13.sp,
-          fontWeight: FontWeight.w400,
-          color: const Color(0xFF111827),
-        ),
+        style: Theme.of(context).textTheme.bodyMedium,
       ),
     );
   }
@@ -287,17 +273,16 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: isSelected ? const Color(0xFF111827) : Colors.transparent,
+                    color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
                     width: 2,
                   ),
                 ),
               ),
               child: Text(
                 option['label'],
-                style: GoogleFonts.inter(
-                  fontSize: 12.sp,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: isSelected ? const Color(0xFF111827) : const Color(0xFF6B7280),
+                  color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
@@ -313,16 +298,13 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
-            color: const Color(0xFF10B981),
+            color: Theme.of(context).colorScheme.primary,
             strokeWidth: 3,
           ),
           SizedBox(height: 4.h),
           Text(
             'Loading warranties...',
-            style: TextStyle(
-              color: const Color(0xFF6B7280),
-              fontSize: 14.sp,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
       ),
@@ -371,49 +353,40 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
             Container(
               padding: EdgeInsets.all(6.w),
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
+                color: Theme.of(context).colorScheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(
                 icon,
                 size: 12.w,
-                color: const Color(0xFF9CA3AF),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             SizedBox(height: 6.h),
             Text(
               message,
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF111827),
-              ),
+              style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 2.h),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: const Color(0xFF6B7280),
-              ),
+              style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
             if (_selectedFilter == 'All') ...[
               SizedBox(height: 6.h),
               ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
-                icon: Icon(Icons.add, color: Colors.white, size: 5.w),
+                onPressed: () => Navigator.pop(context, true), // Return true to trigger refresh
+                icon: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary, size: 5.w),
                 label: Text(
                   'Add First Warranty',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12.sp,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF10B981),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -517,19 +490,12 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
                           children: [
                             Text(
                               receipt.productName,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF111827),
-                              ),
+                              style: Theme.of(context).textTheme.titleLarge,
                             ),
                             const SizedBox(height: 4),
                             Text(
                               receipt.storeName,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF6B7280),
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
                         ),
@@ -592,16 +558,13 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
                             children: [
                               Text(
                                 _getStatusText(daysUntilExpiry),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                   color: _getStatusColor(daysUntilExpiry),
                                 ),
                               ),
                               Text(
                                 _getStatusSubtext(daysUntilExpiry),
-                                style: TextStyle(
-                                  fontSize: 14,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: _getStatusColor(daysUntilExpiry).withOpacity(0.8),
                                 ),
                               ),
@@ -616,7 +579,7 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
                   // Details
                   _buildDetailRow('Purchase Date', _formatDate(receipt.purchaseDate)),
                   _buildDetailRow('Warranty Ends', _formatDate(receipt.warrantyEndDate)),
-                  _buildDetailRowWidget('Price', CurrencyText(amount: receipt.price, style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: const Color(0xFF111827)))),
+                  _buildDetailRowWidget('Price', CurrencyText(amount: receipt.price, style: Theme.of(context).textTheme.labelLarge)),
                   _buildDetailRow('Category', receipt.category),
                 ],
               ),
@@ -637,21 +600,13 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
             width: 100,
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF6B7280),
-                fontWeight: FontWeight.w500,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF111827),
-                fontWeight: FontWeight.w500,
-              ),
+              style: Theme.of(context).textTheme.bodyLarge,
             ),
           ),
         ],
@@ -669,10 +624,7 @@ class _WarrantyListScreenState extends State<WarrantyListScreen> {
             width: 100,
             child: Text(
               label,
-              style: GoogleFonts.inter(
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF111827),
-              ),
+              style: Theme.of(context).textTheme.labelLarge,
             ),
           ),
           const SizedBox(width: 12),

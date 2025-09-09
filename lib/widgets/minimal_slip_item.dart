@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import '../models/receipt.dart';
+import '../widgets/currency_text.dart';
 
 class MinimalSlipItem extends StatelessWidget {
   final Receipt receipt;
@@ -51,11 +51,7 @@ class MinimalSlipItem extends StatelessWidget {
               flex: 3,
               child: Text(
                 receipt.productName,
-                style: GoogleFonts.inter(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF111827),
-                ),
+                style: Theme.of(context).textTheme.titleMedium,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -68,11 +64,7 @@ class MinimalSlipItem extends StatelessWidget {
               flex: 2,
               child: Text(
                 receipt.category,
-                style: GoogleFonts.inter(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w400,
-                  color: const Color(0xFF6B7280),
-                ),
+                style: Theme.of(context).textTheme.bodyMedium,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -81,13 +73,10 @@ class MinimalSlipItem extends StatelessWidget {
             SizedBox(width: 2.w),
             
             // Price
-            Text(
-              '\$${receipt.price.toStringAsFixed(0)}',
-              style: GoogleFonts.inter(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF111827),
-              ),
+            CurrencyText(
+              amount: receipt.price,
+              noDecimals: true,
+              style: Theme.of(context).textTheme.labelLarge,
             ),
             
             SizedBox(width: 2.w),
@@ -95,10 +84,9 @@ class MinimalSlipItem extends StatelessWidget {
             // Days left
             Text(
               daysLeft,
-              style: GoogleFonts.inter(
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w500,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: daysColor,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],

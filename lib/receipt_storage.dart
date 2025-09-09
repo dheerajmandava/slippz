@@ -191,6 +191,7 @@ class _ReceiptStorageState extends State<ReceiptStorage> {
             backgroundColor: Color(0xFF10B981),
           ),
         );
+        // Return to previous screen and trigger refresh
         Navigator.pop(context, true);
       }
     } catch (e) {

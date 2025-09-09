@@ -41,26 +41,29 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       appBar: AppBar(
         title: const Text('Analytics'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF111827)),
+          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF111827)),
+            icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onSurface),
             onPressed: _loadReceipts,
           ),
           IconButton(
-            icon: const Icon(Icons.settings, color: Color(0xFF111827)),
-            onPressed: () {
-              Navigator.pushNamed(context, '/local_storage');
+            icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.onSurface),
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/local_storage');
+              if (result == true) {
+                _loadReceipts(); // Refresh when returning from settings
+              }
             },
             tooltip: 'Local Storage Settings',
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF6366F1)),
+          ? Center(
+              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
             )
           : _receipts.isEmpty
               ? Center(child: _buildEmptyState(),)
@@ -91,18 +94,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF6366F1),
-            Color(0xFF8B5CF6),
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.secondary,
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -111,11 +114,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Spending Overview',
-            style: TextStyle(
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: Colors.white,
-              fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -169,9 +171,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: Colors.white,
-            fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -221,12 +222,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Category Breakdown',
-              style: TextStyle(
-                fontSize: 18,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1F2937),
               ),
             ),
             const SizedBox(height: 16),
@@ -239,9 +238,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       flex: 3,
                       child: Text(
                         entry.key,
-                        style: const TextStyle(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF374151),
                         ),
                       ),
                     ),
@@ -510,7 +508,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
-            onPressed: () => Navigator.pushNamed(context, '/receipt_storage'),
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/receipt_storage');
+              if (result == true) {
+                _loadReceipts(); // Refresh when returning from add receipt
+              }
+            },
             icon: const Icon(Icons.add_a_photo),
             label: const Text('Add Receipt'),
             style: ElevatedButton.styleFrom(
